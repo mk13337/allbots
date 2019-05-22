@@ -1,0 +1,185 @@
+from vk_api.longpoll import VkLongPoll, VkEventType
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
+import vk_api
+from datetime import datetime
+import random
+import urllib.request
+from bs4 import BeautifulSoup
+from array import array
+import time
+
+
+
+token = ""
+vk_session = vk_api.VkApi(token=token)
+
+session_api = vk_session.get_api()
+longpoll = VkLongPoll(vk_session)
+
+
+def get_html(url):
+    response = urllib.request.urlopen(url)
+    return response.read()
+
+
+def create_keyboard(response):
+
+    keyboard = VkKeyboard(one_time=True)
+    if event.from_user and not (event.from_me):
+
+        if response != 'топ 25 фильмов' and response !=  'топ 50 фильмов' and response !=  'топ 75 фильмов' and response !=  'котики' and response !=  'собачки' and response !=  'хомяки' and response !=  'животные' and response !=  'начать' and response !=  'назад' and response !=  'парсинг':
+            keyboard.add_button('Начать', color=VkKeyboardColor.PRIMARY)
+
+        if response == 'начать' or response == 'назад':
+            keyboard.add_button('Парсинг', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_line()
+            keyboard.add_button('Животные', color=VkKeyboardColor.PRIMARY)
+
+        if response == 'парсинг':
+            keyboard.add_button('Топ 25 фильмов', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_button('Топ 50 фильмов', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_button('Топ 75 фильмов', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_line()
+            keyboard.add_button('Назад', color=VkKeyboardColor.PRIMARY)
+
+        elif response == 'животные':
+            keyboard.add_button('Котики', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_button('Собачки', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_line()
+            keyboard.add_button('Хомяки', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_line()
+            keyboard.add_button('Назад', color=VkKeyboardColor.PRIMARY)
+
+        if response == 'топ 25 фильмов' or response == 'топ 50 фильмов' or response == 'топ 75 фильмов' or response == 'котики' or response == 'собачки' or response == 'хомяки':
+            keyboard.add_button('Назад', color=VkKeyboardColor.PRIMARY)
+
+
+
+
+        keyboard = keyboard.get_keyboard()
+        return keyboard
+
+
+def send_message(vk_session, id_type, id, message=None, attachment=None, keyboard=None):
+    vk_session.method('messages.send',{id_type: id, 'message': message, 'random_id': random.randint(-2147483648, +2147483648), "attachment": attachment, 'keyboard': keyboard})
+
+def get_html(url):
+    response = urllib.request.urlopen(url)
+    return response.read()
+
+
+def parse(html):
+    soup = BeautifulSoup(html)
+    table = soup.find('table', class_='ten_items js-rum-hero')
+
+    films = []
+    k = 1
+    for row in table.find_all('tr'):
+        cols = row.find_all('td', class_='news')
+
+        films.append(
+            "№" + str(k) + " "+ cols[0].div.a.text
+        )
+        k+=1
+
+    return films
+
+
+while True:
+
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW:
+
+            kotiki = ["photo-181760057_456239024%2Falbum-181760057_261626465",
+                      "photo-181760057_456239025%2Falbum-181760057_261626465",
+                      "photo-181760057_456239026%2Falbum-181760057_261626465"]
+            sobachki = ["photo-181760057_456239027%2Falbum-181760057_261626465",
+                        "photo-181760057_456239028%2Falbum-181760057_261626465",
+                        "photo-181760057_456239029%2Falbum-181760057_261626465"]
+            homyaki = ["photo-181760057_456239021%2Falbum-181760057_261626465",
+                       "photo-181760057_456239022%2Falbum-181760057_261626465",
+                       "photo-181760057_456239023%2Falbum-181760057_261626465"]
+
+            print('Сообщение пришло в ' + str(datetime.strftime(datetime.now(),"%H:%M:%S")))
+            print('Текст сообщения: ' + str(event.text))
+
+            response = event.text.lower()
+            VkKeyboard.get_empty_keyboard()
+            keyboard = create_keyboard(response)
+
+
+            if event.from_user and not (event.from_me):
+
+                if response != 'топ 25 фильмов' and response != 'топ 50 фильмов' and response != 'топ 75 фильмов' and response != 'котики' and response !=  'собачки' and response !=  'хомяки' and response !=  'животные' and response !=  'начать' and response !=  'назад' and response !=  'парсинг':
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message='Напишите "Начать"', keyboard=keyboard)
+                    print('Не равен')
+
+                if response == 'начать' or response == 'назад':
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message='Выберете вариант',
+                                 keyboard=keyboard)
+                    print('равен')
+
+                if response == 'парсинг':
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message='Выберете вариант',
+                                 keyboard=keyboard)
+                    print('равен')
+
+                elif response == 'животные':
+
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message='Выбери котиков, собачек или хомяков',
+                                 keyboard=keyboard)
+
+                if response == 'топ 25 фильмов':
+                    AllFilms = parse(get_html('https://www.kinopoisk.ru/top/lists/1/'))
+                    Mega = ""
+                    for films in AllFilms:
+                        Mega = Mega + films + '\n'
+
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message=Mega,
+                                 keyboard=keyboard)
+
+                if response == 'топ 50 фильмов':
+                    AllFilms = parse(get_html('https://www.kinopoisk.ru/top/lists/1/filtr/all/sort/order/perpage/50/'))
+                    Mega = ""
+                    for films in AllFilms:
+                        Mega = Mega + films + '\n'
+
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message=Mega,
+                                 keyboard=keyboard)
+
+                if response == 'топ 75 фильмов':
+                    AllFilms = parse(get_html('https://www.kinopoisk.ru/top/lists/1/filtr/all/sort/order/perpage/75/'))
+                    Mega = ""
+                    for films in AllFilms:
+                        Mega = Mega + films + '\n'
+
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message=Mega,
+                                 keyboard=keyboard)
+
+                if response == 'котики':
+                    i = random.randint(0, 2)
+                    attachment = kotiki[i]
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message='Вот котики', attachment=attachment,
+                                 keyboard=keyboard)
+
+                elif response == 'хомяки':
+                    i = random.randint(0, 2)
+                    attachment = homyaki[i]
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message='Вот хомяки', attachment=attachment,
+                                 keyboard=keyboard)
+
+                elif response == 'собачки':
+                    i = random.randint(0,2)
+                    attachment = sobachki[i]
+                    send_message(vk_session, 'user_id', event.user_id,
+                                 message='Вот собачки', attachment=attachment,
+                                 keyboard=keyboard)
